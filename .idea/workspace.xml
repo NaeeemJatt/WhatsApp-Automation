@@ -4,13 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1c17d390-b8dd-411e-b684-96776a6851a8" name="Changes" comment="WhatsApp-Automation" />
+    <list default="true" id="1c17d390-b8dd-411e-b684-96776a6851a8" name="Changes" comment="WhatsApp-Automation 1" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <excluded-from-favorite>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="main" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </excluded-from-favorite>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
         <entry key="$PROJECT_DIR$" value="master" />
@@ -110,11 +123,31 @@
       <option name="project" value="LOCAL" />
       <updated>1723808275222</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="WhatsApp-Automation 1">
+      <option name="closed" value="true" />
+      <created>1723808387716</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1723808387716</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="WhatsApp-Automation" />
-    <option name="LAST_COMMIT_MESSAGE" value="WhatsApp-Automation" />
+    <MESSAGE value="WhatsApp-Automation 1" />
+    <option name="LAST_COMMIT_MESSAGE" value="WhatsApp-Automation 1" />
   </component>
 </project>
