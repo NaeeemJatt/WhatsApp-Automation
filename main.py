@@ -1,171 +1,177 @@
 import sys
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QLineEdit,
-    QPushButton, QProgressBar, QHBoxLayout, QMessageBox, QFileDialog, QTextEdit
-)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+import threading
 import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
+                             QLabel, QLineEdit, QFileDialog, QSpinBox, QTextEdit, QMessageBox,
+                             QProgressBar)
+from PyQt5.QtCore import Qt, pyqtSignal
 
-class WhatsAppSender(QMainWindow):
+
+class WhatsAppAutomationApp(QWidget):
+    customEvent = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
+        self.initUI()
 
-        self.setWindowTitle("WhatsApp Message Sender")
-        self.setGeometry(100, 100, 600, 400)
+    def initUI(self):
+        # Set window properties
+        self.setWindowTitle('WhatsApp Messaging Application')
+        self.setGeometry(100, 100, 700, 500)
+        self.setStyleSheet('background-color: #2C2F33; color: #FFFFFF;')
 
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
+        # Title Label
+        self.titleLabel = QLabel('WhatsApp Automation')
+        self.titleLabel.setStyleSheet('font-size: 28px; font-weight: bold; color: #FFFFFF;')
+        self.titleLabel.setAlignment(Qt.AlignCenter)
 
-        self.layout = QVBoxLayout(self.central_widget)
+        # Subtitle Label (Separate "by" and "NaeemJatt")
+        self.subtitleLabel = QLabel()
+        self.subtitleLabel.setAlignment(Qt.AlignCenter)
 
-        self.create_form()
+        subtitleText = '<span style="font-size: 15px; font-style: italic; color: #AAAAAA;">by </span> ' \
+                       '<span style="font-size: 25px; font-weight: bold; color: #FFFFFF;">NaeemJatt</span>'
+        self.subtitleLabel.setText(subtitleText)
 
-    def create_form(self):
-        # Message input
-        message_label = QLabel("Message:")
-        self.message_input = QTextEdit()  # Changed to QTextEdit for multi-line input
-        message_layout = QVBoxLayout()
-        message_layout.addWidget(message_label)
-        message_layout.addWidget(self.message_input)
+        # Input for recipient list
+        self.importButton = QPushButton('Import Recipient List', self)
+        self.importButton.setStyleSheet(
+            'background-color: #43B581; color: white; font-size: 16px; padding: 10px; border-radius: 10px;')
+        self.importButton.clicked.connect(self.importRecipients)
 
-        # File selection button
-        self.file_button = QPushButton("Select Numbers File")
-        self.file_button.clicked.connect(self.select_file)
+        # Input for message
+        self.messageInput = QTextEdit(self)
+        self.messageInput.setPlaceholderText('Enter your message here')
+        self.messageInput.setStyleSheet(
+            'background-color: #23272A; color: #FFFFFF; border: 1px solid #7289DA; padding: 10px; font-size: 16px;')
 
-        # Send Button
-        self.send_button = QPushButton("Send Message")
-        self.send_button.clicked.connect(self.send_messages_from_file)
+        # Delay Input
+        self.delayLabel = QLabel('Delay (seconds):')
+        self.delayLabel.setStyleSheet('font-size: 16px; color: #FFFFFF;')
+        self.delayInput = QSpinBox(self)
+        self.delayInput.setValue(10)
+        self.delayInput.setStyleSheet(
+            'background-color: #23272A; color: #FFFFFF; border: 1px solid #7289DA; padding: 5px; font-size: 16px;')
+
+        # Send Messages Button
+        self.sendButton = QPushButton('Send Messages', self)
+        self.sendButton.setStyleSheet(
+            'background-color: #43B581; color: white; font-size: 16px; padding: 10px; border-radius: 10px;')
+        self.sendButton.clicked.connect(self.sendMessages)
 
         # Progress Bar
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setValue(0)
+        self.progressBar = QProgressBar(self)
+        self.progressBar.setValue(0)
+        self.progressBar.setStyleSheet('background-color: #23272A; color: #FFFFFF; font-size: 16px;')
 
-        # Adding widgets to the main layout
-        self.layout.addLayout(message_layout)
-        self.layout.addWidget(self.file_button)
-        self.layout.addWidget(self.send_button)
-        self.layout.addWidget(self.progress_bar)
+        # Layouts
+        vbox = QVBoxLayout()
+        vbox.addWidget(self.titleLabel)
+        vbox.addWidget(self.subtitleLabel)
 
-        self.numbers_file_path = None
+        # Increased space between subtitle and import button
+        vbox.addSpacing(20)
 
-    def select_file(self):
-        # Open file dialog to select the numbers file
-        file_dialog = QFileDialog(self)
-        file_dialog.setNameFilter("Text Files (*.txt)")
-        if file_dialog.exec_():
-            self.numbers_file_path = file_dialog.selectedFiles()[0]
-            QMessageBox.information(self, "File Selected", f"Selected file: {self.numbers_file_path}")
+        hbox_import = QHBoxLayout()
+        hbox_import.addStretch(1)
+        hbox_import.addWidget(self.importButton)
+        hbox_import.addStretch(1)
+        vbox.addLayout(hbox_import)
 
-    def send_messages_from_file(self):
-        message = self.message_input.toPlainText()  # Retrieve multi-line text
+        vbox.addWidget(self.messageInput)
+
+        hbox_delay = QHBoxLayout()
+        hbox_delay.addStretch(1)
+        hbox_delay.addWidget(self.delayLabel)
+        hbox_delay.addWidget(self.delayInput)
+        hbox_delay.addStretch(1)
+        vbox.addLayout(hbox_delay)
+
+        hbox_send = QHBoxLayout()
+        hbox_send.addStretch(1)
+        hbox_send.addWidget(self.sendButton)
+        hbox_send.addStretch(1)
+        vbox.addLayout(hbox_send)
+
+        vbox.addWidget(self.progressBar)
+
+        self.setLayout(vbox)
+
+        # Custom Event
+        self.customEvent.connect(self.showMessageBox)
+
+    def importRecipients(self):
+        try:
+            options = QFileDialog.Options()
+            fileName, _ = QFileDialog.getOpenFileName(self, "Import Recipient List", "",
+                                                      "Text Files (*.txt);;All Files (*)", options=options)
+
+            if fileName:
+                with open(fileName, 'r') as file:
+                    self.recipients = file.read().splitlines()
+
+                # Show a message box to confirm successful import
+                self.showMessageBox("Success", "Recipient list imported successfully.")
+
+            else:
+                # If no file is selected, show a warning
+                self.showMessageBox("Warning", "No file selected.")
+
+        except Exception as e:
+            # If there's an error, display it
+            self.showMessageBox("Error", f"An error occurred while importing the file: {str(e)}")
+            print(f"Error: {str(e)}")  # This will print to the console for debugging
+
+    def sendMessages(self):
+        message = self.messageInput.toPlainText()
+        delay = self.delayInput.value()
 
         if not message:
-            QMessageBox.warning(self, "Input Error", "Please enter a message.")
+            self.showMessageBox("Error", "Please enter a message to send.")
             return
 
-        if not self.numbers_file_path:
-            QMessageBox.warning(self, "Input Error", "Please select a numbers file.")
+        if not hasattr(self, 'recipients') or not self.recipients:
+            self.showMessageBox("Error", "Please import a recipient list.")
             return
 
-        # Open the file containing phone numbers
+        threading.Thread(target=self.startSendingMessages, args=(message, delay)).start()
+
+    def startSendingMessages(self, message, delay):
+        driver = webdriver.Chrome()
+
         try:
-            with open(self.numbers_file_path, "r") as file:
-                numbers = [line.strip() for line in file.readlines()]
+            driver.get('https://web.whatsapp.com')
+
+            for i, recipient in enumerate(self.recipients):
+                search_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]')
+                search_box.clear()
+                search_box.send_keys(recipient)
+                search_box.send_keys(Keys.ENTER)
+                time.sleep(2)
+
+                message_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="9"]')
+                message_box.clear()
+                message_box.send_keys(message)
+                message_box.send_keys(Keys.ENTER)
+
+                self.progressBar.setValue(int((i + 1) / len(self.recipients) * 100))
+                time.sleep(delay)
+
         except Exception as e:
-            QMessageBox.critical(self, "File Error", f"Failed to read the file: {str(e)}")
-            return
-
-        self.progress_bar.setValue(0)
-        self.thread = SendMessagesThread(numbers, message)
-        self.thread.progress_signal.connect(self.update_progress)
-        self.thread.finished_signal.connect(self.on_messages_sent)
-        self.thread.start()
-
-    def update_progress(self, value):
-        self.progress_bar.setValue(value)
-
-    def on_messages_sent(self, success):
-        if success:
-            QMessageBox.information(self, "Success", "Messages sent successfully!")
-        else:
-            QMessageBox.critical(self, "Failure", "Failed to send some or all messages.")
-        self.progress_bar.setValue(0)
-
-
-class SendMessagesThread(QThread):
-    progress_signal = pyqtSignal(int)
-    finished_signal = pyqtSignal(bool)
-
-    def __init__(self, numbers, message):
-        super().__init__()
-        self.numbers = numbers
-        self.message = message
-
-    def run(self):
-        success = True
-        try:
-            # Start WebDriver and navigate to WhatsApp Web
-            driver = webdriver.Chrome()
-            driver.get("https://web.whatsapp.com")
-
-            # Wait for the user to scan the QR code manually
-            WebDriverWait(driver, 600).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "canvas"))
-            )
-            # Wait until the user is logged in and the chat list appears
-            WebDriverWait(driver, 600).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div[tabindex='-1']"))
-            )
-
-            for i, number in enumerate(self.numbers):
-                self.send_whatsapp_message(driver, number, self.message)
-                self.progress_signal.emit(int((i + 1) / len(self.numbers) * 100))
-                time.sleep(2)  # Optional: Add a delay between messages
-
-            driver.quit()
-        except Exception as e:
-            print(f"Error: {e}")
-            success = False
+            self.customEvent.emit(f"An error occurred: {str(e)}")
         finally:
-            self.finished_signal.emit(success)
+            driver.quit()
+            self.customEvent.emit("Messages sent successfully.")
 
-    def send_whatsapp_message(self, driver, phone_number, message):
-        try:
-            search_xpath = "//div[@contenteditable='true' and @data-tab='3']"
-            search_box = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, search_xpath))
-            )
-            search_box.click()
-            search_box.clear()
-            search_box.send_keys(phone_number)
-            search_box.send_keys(Keys.ENTER)
+    def showMessageBox(self, title, message):
+        QMessageBox.information(self, title, message)
 
-            # Wait for the message box to appear and then send the message
-            message_xpath = "//div[@contenteditable='true' and @data-tab='1']"
-            input_box = WebDriverWait(driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, message_xpath))
-            )
-            input_box.click()
 
-            # Split the message into lines and send each line separately
-            for line in message.split('\n'):
-                input_box.send_keys(line)
-                input_box.send_keys(Keys.SHIFT + Keys.ENTER)
-
-            # Finally, send the message
-            input_box.send_keys(Keys.ENTER)
-
-            print(f"Message sent to {phone_number}.")
-        except Exception as e:
-            print(f"Failed to send message to {phone_number}: {e}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = WhatsAppSender()
-    window.show()
+    ex = WhatsAppAutomationApp()
+    ex.show()
     sys.exit(app.exec_())
