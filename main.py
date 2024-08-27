@@ -1,21 +1,35 @@
 import sys
 import threading
 import time
+import gc
+import random
+import logging
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, WebDriverException
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout,
-                             QLabel, QLineEdit, QFileDialog, QSpinBox, QTextEdit, QMessageBox,
+                             QLabel, QFileDialog, QSpinBox, QTextEdit, QMessageBox,
                              QProgressBar)
 from PyQt5.QtCore import Qt, pyqtSignal
 
 
 class WhatsAppAutomationApp(QWidget):
     customEvent = pyqtSignal(str)
+    updateProgressBar = pyqtSignal(int)
 
     def __init__(self):
         super().__init__()
+        self.recipients = []
+        self.driver = None  # To store WebDriver instance
         self.initUI()
+        self.initLogger()
+
+    def initLogger(self):
+        logging.basicConfig(filename='whatsapp_automation.log', level=logging.ERROR,
+                            format='%(asctime)s - %(levelname)s - %(message)s')
 
     def initUI(self):
         # Set window properties
@@ -28,7 +42,7 @@ class WhatsAppAutomationApp(QWidget):
         self.titleLabel.setStyleSheet('font-size: 28px; font-weight: bold; color: #FFFFFF;')
         self.titleLabel.setAlignment(Qt.AlignCenter)
 
-        # Subtitle Label (Separate "by" and "NaeemJatt")
+        # Subtitle Label
         self.subtitleLabel = QLabel()
         self.subtitleLabel.setAlignment(Qt.AlignCenter)
 
@@ -71,8 +85,6 @@ class WhatsAppAutomationApp(QWidget):
         vbox = QVBoxLayout()
         vbox.addWidget(self.titleLabel)
         vbox.addWidget(self.subtitleLabel)
-
-        # Increased space between subtitle and import button
         vbox.addSpacing(20)
 
         hbox_import = QHBoxLayout()
@@ -100,70 +112,131 @@ class WhatsAppAutomationApp(QWidget):
 
         self.setLayout(vbox)
 
-        # Custom Event
+        # Custom Events
         self.customEvent.connect(self.showMessageBox)
+        self.updateProgressBar.connect(self.progressBar.setValue)
+
+    def cleanup(self):
+        """
+        Cleanup method to release all used resources and memory.
+        """
+        if self.driver:
+            try:
+                self.driver.quit()
+            except WebDriverException as e:
+                logging.error(f"Error quitting WebDriver: {str(e)}")
+            finally:
+                self.driver = None
+
+        for widget in QApplication.topLevelWidgets():
+            try:
+                widget.close()
+                widget.deleteLater()
+            except Exception as e:
+                logging.error(f"Error closing widget: {str(e)}")
+
+        gc.collect()
 
     def importRecipients(self):
         try:
             options = QFileDialog.Options()
-            fileName, _ = QFileDialog.getOpenFileName(self, "Import Recipient List", "",
-                                                      "Text Files (*.txt);;All Files (*)", options=options)
+            options |= QFileDialog.DontUseNativeDialog
+            fileName, _ = QFileDialog.getOpenFileName(
+                self,
+                "Import Recipient List",
+                "",
+                "Text Files (*.txt);;All Files (*)",
+                options=options
+            )
 
             if fileName:
-                with open(fileName, 'r') as file:
-                    self.recipients = file.read().splitlines()
-
-                # Show a message box to confirm successful import
-                self.showMessageBox("Success", "Recipient list imported successfully.")
-
+                try:
+                    with open(fileName, 'r') as file:
+                        self.recipients = [line.strip() for line in file if line.strip()]
+                    self.showMessageBox("Success", "Recipient list imported successfully.")
+                except (IOError, OSError) as file_error:
+                    self.showMessageBox("Error", f"An error occurred while reading the file: {str(file_error)}")
+                    logging.error(f"File Error: {str(file_error)}")
             else:
-                # If no file is selected, show a warning
                 self.showMessageBox("Warning", "No file selected.")
 
         except Exception as e:
-            # If there's an error, display it
-            self.showMessageBox("Error", f"An error occurred while importing the file: {str(e)}")
-            print(f"Error: {str(e)}")  # This will print to the console for debugging
+            self.showMessageBox("Error", f"An unexpected error occurred: {str(e)}")
+            logging.error(f"Unexpected Error: {str(e)}")
 
     def sendMessages(self):
-        message = self.messageInput.toPlainText()
-        delay = self.delayInput.value()
-
-        if not message:
-            self.showMessageBox("Error", "Please enter a message to send.")
-            return
-
-        if not hasattr(self, 'recipients') or not self.recipients:
-            self.showMessageBox("Error", "Please import a recipient list.")
-            return
-
-        threading.Thread(target=self.startSendingMessages, args=(message, delay)).start()
-
-    def startSendingMessages(self, message, delay):
-        driver = webdriver.Chrome()
-
         try:
-            driver.get('https://web.whatsapp.com')
+            message = self.messageInput.toPlainText()
+            delay = self.delayInput.value()
 
-            for i, recipient in enumerate(self.recipients):
-                search_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]')
-                search_box.clear()
-                search_box.send_keys(recipient)
-                search_box.send_keys(Keys.ENTER)
-                time.sleep(2)
+            if not message.strip():
+                self.showMessageBox("Error", "Please enter a message to send.")
+                return
 
-                message_box = driver.find_element(By.XPATH, '//div[@contenteditable="true"][@data-tab="9"]')
-                message_box.clear()
-                message_box.send_keys(message)
-                message_box.send_keys(Keys.ENTER)
+            if not hasattr(self, 'recipients') or not self.recipients:
+                self.showMessageBox("Error", "Please import a recipient list.")
+                return
 
-                self.progressBar.setValue(int((i + 1) / len(self.recipients) * 100))
-                time.sleep(delay)
+            threading.Thread(target=self.startSendingMessages, args=(message, delay), daemon=True).start()
 
         except Exception as e:
+            self.showMessageBox("Error", f"An unexpected error occurred: {str(e)}")
+            logging.error(f"Unexpected Error: {str(e)}")
+
+    def startSendingMessages(self, message, delay):
+        try:
+            # Initialize WebDriver
+            self.driver = webdriver.Chrome()
+
+            # Open WhatsApp Web
+            self.driver.get('https://web.whatsapp.com')
+
+            # Wait for WhatsApp Web to load completely
+            WebDriverWait(self.driver, 30).until(
+                EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+            )
+
+            for i, recipient in enumerate(self.recipients):
+                try:
+                    # Search for the recipient
+                    search_box = WebDriverWait(self.driver, 20).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="3"]'))
+                    )
+                    search_box.clear()
+                    search_box.send_keys(recipient)
+                    time.sleep(2)
+                    search_box.send_keys(Keys.ENTER)
+
+                    # Wait for the message input box to load
+                    message_box = WebDriverWait(self.driver, 20).until(
+                        EC.presence_of_element_located((By.XPATH, '//div[@contenteditable="true"][@data-tab="10"]'))
+                    )
+                    message_box.click()
+                    message_box.send_keys(message)
+                    message_box.send_keys(Keys.ENTER)
+
+                    self.updateProgressBar.emit(int((i + 1) / len(self.recipients) * 100))
+
+                    # Random delay to mimic human behavior
+                    time.sleep(delay + random.uniform(1, 3))
+
+                except (NoSuchElementException, TimeoutException) as e:
+                    logging.error(f"Failed to send message to {recipient}: {str(e)}")
+                    self.customEvent.emit(f"Failed to send message to {recipient}. Skipping...")
+
+        except WebDriverException as e:
             self.customEvent.emit(f"An error occurred: {str(e)}")
+            logging.error(f"WebDriver Error: {str(e)}")
         finally:
-            driver.quit()
+            if self.driver:
+                try:
+                    self.driver.quit()
+                except WebDriverException as e:
+                    self.customEvent.emit(f"Error closing WebDriver: {str(e)}")
+                    logging.error(f"Error closing WebDriver: {str(e)}")
+                finally:
+                    self.driver = None
+            gc.collect()
             self.customEvent.emit("Messages sent successfully.")
 
     def showMessageBox(self, title, message):
@@ -172,6 +245,15 @@ class WhatsAppAutomationApp(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = WhatsAppAutomationApp()
-    ex.show()
-    sys.exit(app.exec_())
+
+    try:
+        ex = WhatsAppAutomationApp()
+        ex.show()
+
+        sys.exit(app.exec_())
+    except Exception as e:
+        logging.critical(f"Unhandled exception: {str(e)}")
+    finally:
+        if 'ex' in locals():
+            ex.cleanup()
+        gc.collect()
