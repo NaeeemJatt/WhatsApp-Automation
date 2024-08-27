@@ -178,3 +178,33 @@ Stacktrace:
 	BaseThreadInitThunk [0x00007FF8412F257D+29]
 	RtlUserThreadStart [0x00007FF8426EAF28+40]
 
+2024-08-27 21:28:58,631 - ERROR - WebDriver Error: Message: stale element reference: stale element not found in the current frame
+  (Session info: chrome=127.0.6533.120); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#stale-element-reference-exception
+Stacktrace:
+	GetHandleVerifier [0x00007FF767979642+30946]
+	(No symbol) [0x00007FF76792E3D9]
+	(No symbol) [0x00007FF767826FDA]
+	(No symbol) [0x00007FF76782DA57]
+	(No symbol) [0x00007FF76782FD31]
+	(No symbol) [0x00007FF76782FDD0]
+	(No symbol) [0x00007FF76787A3AB]
+	(No symbol) [0x00007FF7678793D7]
+	(No symbol) [0x00007FF76786C271]
+	(No symbol) [0x00007FF76789CA6A]
+	(No symbol) [0x00007FF76786BBB6]
+	(No symbol) [0x00007FF76789CC80]
+	(No symbol) [0x00007FF7678BB041]
+	(No symbol) [0x00007FF76789C813]
+	(No symbol) [0x00007FF76786A6E5]
+	(No symbol) [0x00007FF76786B021]
+	GetHandleVerifier [0x00007FF767AAF84D+1301229]
+	GetHandleVerifier [0x00007FF767ABBDC7+1351783]
+	GetHandleVerifier [0x00007FF767AB2A13+1313971]
+	GetHandleVerifier [0x00007FF7679ADD16+245686]
+	(No symbol) [0x00007FF76793759F]
+	(No symbol) [0x00007FF767933814]
+	(No symbol) [0x00007FF7679339A2]
+	(No symbol) [0x00007FF76792A3FF]
+	BaseThreadInitThunk [0x00007FF8412F257D+29]
+	RtlUserThreadStart [0x00007FF8426EAF28+40]
+
