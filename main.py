@@ -53,7 +53,21 @@ class WhatsAppAutomationApp(QWidget):
         # Input for recipient list
         self.importButton = QPushButton('Import Recipient List', self)
         self.importButton.setStyleSheet(
-            'background-color: #43B581; color: white; font-size: 16px; padding: 10px; border-radius: 10px;')
+            '''
+            QPushButton {
+                background-color: #43B581;
+                color: white;
+                font-size: 16px;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QPushButton:pressed {
+                background-color: #2E8B57;
+                padding-left: 5px;
+                padding-top: 5px;
+            }
+            '''
+        )
         self.importButton.clicked.connect(self.importRecipients)
 
         # Input for message
@@ -73,7 +87,21 @@ class WhatsAppAutomationApp(QWidget):
         # Send Messages Button
         self.sendButton = QPushButton('Send Messages', self)
         self.sendButton.setStyleSheet(
-            'background-color: #43B581; color: white; font-size: 16px; padding: 10px; border-radius: 10px;')
+            '''
+            QPushButton {
+                background-color: #43B581;
+                color: white;
+                font-size: 16px;
+                padding: 10px;
+                border-radius: 10px;
+            }
+            QPushButton:pressed {
+                background-color: #2E8B57;
+                padding-left: 5px;
+                padding-top: 5px;
+            }
+            '''
+        )
         self.sendButton.clicked.connect(self.sendMessages)
 
         # Progress Bar
@@ -225,35 +253,22 @@ class WhatsAppAutomationApp(QWidget):
                     self.customEvent.emit(f"Failed to send message to {recipient}. Skipping...")
 
         except WebDriverException as e:
-            self.customEvent.emit(f"An error occurred: {str(e)}")
+            self.customEvent.emit("WebDriverException occurred. Please check your WebDriver installation.")
             logging.error(f"WebDriver Error: {str(e)}")
+
         finally:
-            if self.driver:
-                try:
-                    self.driver.quit()
-                except WebDriverException as e:
-                    self.customEvent.emit(f"Error closing WebDriver: {str(e)}")
-                    logging.error(f"Error closing WebDriver: {str(e)}")
-                finally:
-                    self.driver = None
-            gc.collect()
-            self.customEvent.emit("Messages sent successfully.")
+            self.cleanup()
 
     def showMessageBox(self, title, message):
         QMessageBox.information(self, title, message)
 
 
-if __name__ == '__main__':
+def main():
     app = QApplication(sys.argv)
+    ex = WhatsAppAutomationApp()
+    ex.show()
+    sys.exit(app.exec_())
 
-    try:
-        ex = WhatsAppAutomationApp()
-        ex.show()
 
-        sys.exit(app.exec_())
-    except Exception as e:
-        logging.critical(f"Unhandled exception: {str(e)}")
-    finally:
-        if 'ex' in locals():
-            ex.cleanup()
-        gc.collect()
+if __name__ == '__main__':
+    main()
