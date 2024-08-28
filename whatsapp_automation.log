@@ -208,3 +208,27 @@ Stacktrace:
 	BaseThreadInitThunk [0x00007FF8412F257D+29]
 	RtlUserThreadStart [0x00007FF8426EAF28+40]
 
+2024-08-28 17:17:45,342 - ERROR - WebDriver Error: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=127.0.6533.122)
+Stacktrace:
+	GetHandleVerifier [0x00007FF7BDA19642+30946]
+	(No symbol) [0x00007FF7BD9CE3D9]
+	(No symbol) [0x00007FF7BD8C6FDA]
+	(No symbol) [0x00007FF7BD89CB85]
+	(No symbol) [0x00007FF7BD9437A7]
+	(No symbol) [0x00007FF7BD95A771]
+	(No symbol) [0x00007FF7BD93C813]
+	(No symbol) [0x00007FF7BD90A6E5]
+	(No symbol) [0x00007FF7BD90B021]
+	GetHandleVerifier [0x00007FF7BDB4F84D+1301229]
+	GetHandleVerifier [0x00007FF7BDB5BDC7+1351783]
+	GetHandleVerifier [0x00007FF7BDB52A13+1313971]
+	GetHandleVerifier [0x00007FF7BDA4DD16+245686]
+	(No symbol) [0x00007FF7BD9D759F]
+	(No symbol) [0x00007FF7BD9D3814]
+	(No symbol) [0x00007FF7BD9D39A2]
+	(No symbol) [0x00007FF7BD9CA3FF]
+	BaseThreadInitThunk [0x00007FFF2331257D+29]
+	RtlUserThreadStart [0x00007FFF2562AF28+40]
+
