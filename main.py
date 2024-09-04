@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QVBoxLayout, QH
                              QProgressBar)
 from PyQt5.QtCore import Qt, pyqtSignal
 
-
 class WhatsAppAutomationApp(QWidget):
     customEvent = pyqtSignal(str)
     updateProgressBar = pyqtSignal(int)
@@ -250,25 +249,29 @@ class WhatsAppAutomationApp(QWidget):
 
                 except (NoSuchElementException, TimeoutException) as e:
                     logging.error(f"Failed to send message to {recipient}: {str(e)}")
-                    self.customEvent.emit(f"Failed to send message to {recipient}. Skipping...")
+                    self.showMessageBox("Error", f"Failed to send message to {recipient}. Check the recipient name and try again.")
+                    continue
 
-        except WebDriverException as e:
-            self.customEvent.emit("WebDriverException occurred. Please check your WebDriver installation.")
-            logging.error(f"WebDriver Error: {str(e)}")
+            self.showMessageBox("Success", "All messages sent successfully!")
+            self.cleanup()
 
-        finally:
+        except Exception as e:
+            self.showMessageBox("Error", f"An unexpected error occurred during messaging: {str(e)}")
+            logging.error(f"Unexpected Error: {str(e)}")
             self.cleanup()
 
     def showMessageBox(self, title, message):
-        QMessageBox.information(self, title, message)
+        msgBox = QMessageBox()
+        msgBox.setWindowTitle(title)
+        msgBox.setText(message)
+        msgBox.exec_()
 
+    def closeEvent(self, event):
+        self.cleanup()
+        event.accept()
 
-def main():
+if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = WhatsAppAutomationApp()
     ex.show()
     sys.exit(app.exec_())
-
-
-if __name__ == '__main__':
-    main()
